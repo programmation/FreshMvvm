@@ -9,6 +9,7 @@ namespace FreshMvvm
 {
     public class FreshMasterDetailNavigationContainer : Xamarin.Forms.MasterDetailPage, IFreshNavigationService
     {
+        List<Page> _pagesInner = new List<Page> ();
         Dictionary<string, Page> _pages = new Dictionary<string, Page> ();
         ContentPage _menuPage;
         ObservableCollection<string> _pageNames = new ObservableCollection<string> ();
@@ -41,6 +42,7 @@ namespace FreshMvvm
         {
             var page = FreshPageModelResolver.ResolvePageModel<T> (data);
             page.GetModel ().CurrentNavigationServiceName = NavigationServiceName;
+            _pagesInner.Add(page);
             var navigationContainer = CreateContainerPage (page);
             _pages.Add (title, navigationContainer);
             _pageNames.Add (title);
@@ -48,11 +50,16 @@ namespace FreshMvvm
                 Detail = navigationContainer;
         }
 
-        protected virtual Page CreateContainerPage (Page page)
+        internal Page CreateContainerPageSafe (Page page)
         {
             if (page is NavigationPage || page is MasterDetailPage || page is TabbedPage)
                 return page;
 
+            return CreateContainerPage(page);
+        }
+
+        protected virtual Page CreateContainerPage (Page page)
+        {
             return new NavigationPage (page);
         }
 
@@ -85,7 +92,7 @@ namespace FreshMvvm
         public Task PushPage (Page page, FreshBasePageModel model, bool modal = false, bool animate = true)
         {
             if (modal)
-                return Navigation.PushModalAsync (CreateContainerPage(page));
+                return Navigation.PushModalAsync (CreateContainerPageSafe(page));
             return (Detail as NavigationPage).PushAsync (page, animate); //TODO: make this better
 		}
 
@@ -112,6 +119,15 @@ namespace FreshMvvm
                 if (page is NavigationPage)
                     ((NavigationPage)page).NotifyAllChildrenPopped();
             }
+        }
+
+        public Task<FreshBasePageModel> SwitchSelectedRootPageModel<T>() where T : FreshBasePageModel
+        {
+            var tabIndex = _pagesInner.FindIndex(o => o.GetModel().GetType().FullName == typeof(T).FullName);
+
+            Detail = _pages.Values.ElementAt(tabIndex);;
+
+            return Task.FromResult((Detail as NavigationPage).CurrentPage.GetModel());
         }
     }
 }

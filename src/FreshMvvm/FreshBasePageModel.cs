@@ -42,8 +42,8 @@ namespace FreshMvvm
         /// <summary>
         /// This method is called when a page is Pop'd, it also allows for data to be returned.
         /// </summary>
-        /// <param name="returndData">This data that's returned from </param>
-        public virtual void ReverseInit (object returndData)
+        /// <param name="returnedData">This data that's returned from </param>
+        public virtual void ReverseInit (object returnedData)
         {
         }
 
@@ -127,15 +127,7 @@ namespace FreshMvvm
         {
             if (e.Page == this.CurrentPage)
             {
-                if (PageWasPopped != null)
-                    PageWasPopped(this, EventArgs.Empty);
-
-                var navPage = (this.CurrentPage.Parent as NavigationPage);
-                if (navPage != null)
-                    navPage.Popped -= HandleNavPagePopped;
-
-                CurrentPage.Appearing -= ViewIsAppearing;
-                CurrentPage.Disappearing -= ViewIsDisappearing;
+                RaisePageWasPopped();
             }
         }
 
@@ -143,6 +135,14 @@ namespace FreshMvvm
         {
             if (PageWasPopped != null)
                 PageWasPopped(this, EventArgs.Empty);
+
+            var navPage = (this.CurrentPage.Parent as NavigationPage);
+            if (navPage != null)
+                navPage.Popped -= HandleNavPagePopped;
+
+            CurrentPage.Appearing -= ViewIsAppearing;
+            CurrentPage.Disappearing -= ViewIsDisappearing;
+            CurrentPage.BindingContext = null;
         }
     }
 }
